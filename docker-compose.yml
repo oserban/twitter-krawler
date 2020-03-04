@@ -1,0 +1,13 @@
+version: '3'
+services:
+  twitter-krawler:
+    container_name: "twitter-krawler"
+    image: "twitter-krawler:latest"
+    build: .
+    restart: always
+    volumes:
+      - ${PIPELINE_LOGS}:/logs/
+    environment:
+      CRAWLER_SOURCE: "twitter"
+      CRAWLER_TARGET: ${CRAWLER_TARGET}
+      CRAWLER_CONFIG: ${CRAWLER_CONFIG}
