@@ -20,36 +20,24 @@ fun createTarget(uri: URI): DataTarget {
     if (path.startsWith("/")) {
         path = path.substring(1).trim { it <= ' ' }
     }
-    val parts = path.split("/").toTypedArray()
-    val index = parts[0]
-    val table = if (parts.size > 1) parts[1] else index
 
     return when (uri.scheme.toLowerCase()) {
-        "kafka" -> KafkaConnection(uri.host, uri.port, index)
-        "mongo" -> MongoConnection(uri.host, uri.port, index, table)
-        "elastic", "es" -> ElasticSink(uri.host, uri.port, index, table)
+        "kafka" -> KafkaConnection(uri.host, uri.port, path)
+        "mongodb" -> MongoConnection(uri)
+        "elastic", "es" -> ElasticSink(uri.host, uri.port, path)
         "console" -> ConsoleSink()
         else -> throw IOException("Unable to build target based on the URI: $uri")
     }
 }
 
 fun createSource(uri: URI, properties: Map<String, *>): DataSource {
-    var path = uri.path
-    require(!(path == null || path.isEmpty())) { "Invalid uri path = $uri" }
-    if (path.startsWith("/")) {
-        path = path.substring(1).trim { it <= ' ' }
-    }
-    val parts = path.split("/").toTypedArray()
-    val db = parts[0]
-    val table = if (parts.size > 1) parts[1] else db
-
     return when (uri.scheme.toLowerCase()) {
         "twitter" -> TwitterConnection(loadConfig(properties[PROP_CONFIG] as String))
-        "mongo" -> {
+        "mongodb" -> {
             val startId = properties[PROP_START_ID] as Long
             val lastId = properties[PROP_LAST_ID] as Long
             val lang = properties[PROP_LANG] as String?
-            MongoConnection(uri.host, uri.port, db, table, startId, lastId, lang)
+            MongoConnection(uri, startId = startId, lastId = lastId, language = lang)
         }
         else -> throw IOException("Unable to build target based on the URI: $uri")
     }

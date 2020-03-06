@@ -1,46 +1,40 @@
 package org.world.data
 
+import org.apache.http.HttpHost
 import org.apache.logging.log4j.LogManager
-import org.elasticsearch.client.Client
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.common.transport.TransportAddress
+import org.elasticsearch.action.index.IndexRequest
+import org.elasticsearch.client.RequestOptions
+import org.elasticsearch.client.RestClient
+import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.common.xcontent.XContentType
 import org.elasticsearch.rest.RestStatus
-import org.elasticsearch.transport.client.PreBuiltTransportClient
 import org.world.data.FilteredTwitterConnection.Companion.FIELD_TIMESTAMP
 import org.world.data.FilteredTwitterConnection.Companion.FIELD_TIMESTAMP_MS
 import org.world.toJson
-import java.net.InetAddress
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 private val logger = LogManager.getLogger(ElasticSink::class.java)
+
 private val df: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-private const val DEFAULT_PORT = 9300
-private const val DEFAULT_CLUSTER_NAME = "docker-cluster"
+private const val DEFAULT_PORT = 9200
 
 private fun getDate(date: Any?): String {
     return df.format(date.toString().toLong())
 }
 
-class ElasticSink internal constructor(
-    hostname: String?, port: Int = DEFAULT_PORT,
-    private val collection: String,
-    private val type: String
+class ElasticSink(
+    hostname: String? = "localhost",
+    port: Int = DEFAULT_PORT,
+    private val collection: String
 ) : DataTarget {
-    private val client: Client
-
-    init {
-        val address = TransportAddress(InetAddress.getByName(hostname), port)
-        val settings = Settings.builder().put("cluster.name", DEFAULT_CLUSTER_NAME).build()
-        client = PreBuiltTransportClient(settings).addTransportAddress(address)
-    }
+    private val client = RestHighLevelClient(RestClient.builder(HttpHost(hostname, port, "http")))
 
     override fun insertDocument(document: Map<*, *>) {
         logger.info("Inserting document id = " + document["id"])
-        val source: String? = toJson(fixDocument(document), logger)
-        val response = client.prepareIndex(collection, type).setSource(source, XContentType.JSON).get()
+        val request = IndexRequest(collection).id("id").source(toJson(fixDocument(document), logger), XContentType.JSON)
+        val response = client.index(request, RequestOptions.DEFAULT)
         if (response.status() != RestStatus.CREATED) {
             logger.error("Error while inserting document cause: " + response.status())
         }

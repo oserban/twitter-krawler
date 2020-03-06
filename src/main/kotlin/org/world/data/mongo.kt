@@ -1,43 +1,32 @@
 package org.world.data
 
-import com.mongodb.*
+import com.mongodb.BasicDBObject
+import com.mongodb.MongoClient
+import com.mongodb.MongoClientURI
+import com.mongodb.client.MongoCollection
 import org.apache.logging.log4j.LogManager
 import java.io.IOException
+import java.net.URI
 
 private val logger = LogManager.getLogger(MongoConnection::class.java)
 
 class MongoConnection(
-    mongoHost: String? = null, mongoPort: Int? = null, dbName: String? = null,
-    mongoCollectionName: String? = null,
+    mongoURI: URI,
     private val startId: Long? = null, private val lastId: Long? = null,
     private val language: String? = null
 ) : DataSource, DataTarget {
 
     private val mongoClient: MongoClient
-    private val mongoCollection: DBCollection
+    private val mongoCollection: MongoCollection<BasicDBObject>
 
     init {
-        val clientURI = MongoClientURI(createHostUri(mongoHost, mongoPort))
+        val clientURI = MongoClientURI(mongoURI.toString())
         mongoClient = MongoClient(clientURI)
-        if (dbName == null) {
-            throw IOException("Invalid database provided")
+        if (clientURI.database.isNullOrEmpty() || clientURI.collection.isNullOrEmpty()) {
+            throw IOException("Invalid database or collection provided")
         }
-        val db = mongoClient.getDB(dbName)
-        mongoCollection = db.getCollection(mongoCollectionName)
-    }
-
-    private fun createHostUri(host: String?, port: Int?): String {
-        val sb = StringBuilder("mongodb://")
-        if (host != null) {
-            sb.append(host)
-        } else {
-            sb.append("localhost")
-        }
-        if (port != null && port > 0) {
-            sb.append(":").append(port)
-        }
-        sb.append("/")
-        return sb.toString()
+        val db = mongoClient.getDatabase(clientURI.database!!)
+        mongoCollection = db.getCollection(clientURI.collection!!, BasicDBObject::class.java)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -49,8 +38,8 @@ class MongoConnection(
         }
     }
 
-    private fun buildQuery(): DBObject? {
-        var query: DBObject? = null
+    private fun buildQuery(): BasicDBObject {
+        var query: BasicDBObject? = null
         if (lastId != null && lastId > 0) {
             query = BasicDBObject("id", BasicDBObject("\$lt", lastId))
         }
@@ -65,15 +54,15 @@ class MongoConnection(
             if (query == null) {
                 query = BasicDBObject("lang", language)
             } else {
-                query.put("lang", language)
+                query["lang"] = language
             }
         }
-        return query
+        return query!!
     }
 
     override fun insertDocument(document: Map<*, *>) {
-        logger.info("Inserting document id = " + document["id"] + " into " + mongoCollection.fullName)
-        mongoCollection.insert(BasicDBObject(document))
+        logger.info("Inserting document id = " + document["id"] + " into " + mongoCollection.namespace.fullName)
+        mongoCollection.insertOne(BasicDBObject(document))
     }
 
     override fun close() {
