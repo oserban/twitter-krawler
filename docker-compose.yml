@@ -2,7 +2,7 @@ version: '3'
 services:
   twitter-krawler:
     container_name: "twitter-krawler"
-    image: "twitter-krawler:latest"
+    image: "oserban/twitter-krawler:latest"
     build: .
     restart: always
     volumes:

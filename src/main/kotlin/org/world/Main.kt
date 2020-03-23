@@ -18,14 +18,20 @@ private const val EXIT_CODE = 1
 fun main(args: Array<String>) {
     val params = RunParams()
     val cmdParser = JCommander(params)
-    cmdParser.setProgramName("crawler")
+    cmdParser.programName = "crawler"
+    cmdParser.console = LoggerConsole(logger)
+
     try {
         cmdParser.parse(*args)
     } catch (e: ParameterException) {
-        failToStart(cmdParser, e.message, EXIT_CODE)
+        logger.error("Error running crawler: ${e.message}")
+        cmdParser.usage()
+        exitProcess(EXIT_CODE)
     }
+
     if (params.help) {
-        printUsage(cmdParser)
+        cmdParser.usage()
+        exitProcess(0)
     }
     printParameters(params)
     printEnv()
@@ -46,7 +52,7 @@ fun main(args: Array<String>) {
 
 private fun parseURI(source: String) = when {
     source.contains(":///") -> URI.create(source)
-    source.contains("://") -> URI.create("$source/")
+    source.contains("://") -> URI.create(source)
     else -> URI.create("$source:///")
 }
 
@@ -60,21 +66,6 @@ private fun addShutdownHook(source: DataSource) {
             // -- ignore
         }
     }))
-}
-
-private fun failToStart(cmdParser: JCommander, message: String?, exitCode: Int) {
-    logger.info("Error running crawler: $message")
-    val sb = StringBuilder()
-    cmdParser.usage(sb)
-    logger.info(sb.toString())
-    exitProcess(exitCode)
-}
-
-private fun printUsage(cmdParser: JCommander) {
-    val sb = StringBuilder()
-    cmdParser.usage(sb)
-    logger.info(sb.toString())
-    exitProcess(0)
 }
 
 private fun printParameters(runParameters: RunParams) {
@@ -108,13 +99,13 @@ class RunParams {
     @Parameter(
         names = ["--target"],
         required = true,
-        description = "The data producer connection, either kafka or mongo"
+        description = "The data target connection: elasticsearch, kafka, mongo or console"
     )
     var target = ""
 
-    @Parameter(names = ["--source"], required = true, description = "The data source connection: twitter or s3")
+    @Parameter(names = ["--source"], required = true, description = "The data source connection: twitter or mongo")
     var source = ""
 
-    @Parameter(names = ["--config"], description = "The HoseBird config file. Usually loaded from the jar")
+    @Parameter(names = ["--config"], description = "The twitter config file")
     var configFile = "/config.properties"
 }
