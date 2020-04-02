@@ -20,7 +20,7 @@ class KafkaConnection(server: String = DEFAULT_HOST, port: Int = DEFAULT_PORT, p
     }
 
     override fun insertDocument(document: Map<*, *>) {
-        logger.info("Inserting document id = " + document["id"] + " on topic = " + topic)
+        logger.debug("Inserting document id = " + document["id"] + " on topic = " + topic)
         producer.send(ProducerRecord(topic, toJson(document, logger)))
     }
 

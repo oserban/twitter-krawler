@@ -160,7 +160,7 @@ class TwitterConnection internal constructor(config: Properties) : FilteredTwitt
 
                 // These are warnings that we're breaching firehose limits and missing tweets
                 if (tweetMap.containsKey("limit")) {
-                    logger.debug("Limit message received: $msg")
+                    logger.info("Limit message received: $msg")
                     continue
                 }
 

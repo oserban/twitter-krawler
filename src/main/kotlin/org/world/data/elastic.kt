@@ -32,7 +32,7 @@ class ElasticSink(
     private val client = RestHighLevelClient(RestClient.builder(HttpHost(hostname, port, "http")))
 
     override fun insertDocument(document: Map<*, *>) {
-        logger.info("Inserting document id = " + document["id"])
+        logger.debug("Inserting document id = " + document["id"])
         val request = IndexRequest(collection).id("id").source(toJson(fixDocument(document), logger), XContentType.JSON)
         val response = client.index(request, RequestOptions.DEFAULT)
         if (response.status() != RestStatus.CREATED) {

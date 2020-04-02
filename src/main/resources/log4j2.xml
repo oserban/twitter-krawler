@@ -15,18 +15,14 @@
             </Policies>
             <DefaultRolloverStrategy>
                 <Delete basePath="logs" maxDepth="1">
-                    <IfFileName glob="twitter-crawler-????-??-??-*.log">
-                        <IfAny>
-                            <IfAccumulatedFileSize exceeds="500 MB" />
-                            <IfAccumulatedFileCount exceeds="5" />
-                        </IfAny>
-                    </IfFileName>
+                    <IfFileName glob="twitter-crawler-*.log"/>
+                    <IfLastModified age="3d"/>
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Logger name="org.imperial.isst.*" level="debug">
+        <Logger name="org.imperial.isst.*" level="info">
             <AppenderRef ref="RollingFile"/>
         </Logger>
         <Root level="info">

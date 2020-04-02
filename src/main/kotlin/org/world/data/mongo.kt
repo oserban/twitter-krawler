@@ -61,7 +61,7 @@ class MongoConnection(
     }
 
     override fun insertDocument(document: Map<*, *>) {
-        logger.info("Inserting document id = " + document["id"] + " into " + mongoCollection.namespace.fullName)
+        logger.debug("Inserting document id = " + document["id"] + " into " + mongoCollection.namespace.fullName)
         mongoCollection.insertOne(BasicDBObject(document))
     }
 
