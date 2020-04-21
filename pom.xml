@@ -8,6 +8,14 @@
     <artifactId>twitter-krawler</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+         
+    <distributionManagement>
+         <repository>
+                  <id>github</id>
+                  <name>GitHub Packages</name>
+                  <url>https://maven.pkg.github.com/oserban/twitter-krawler</url>
+         </repository>
+    </distributionManagement>
 
     <name>Just another Twitter Crawler</name>
 
